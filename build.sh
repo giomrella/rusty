@@ -17,4 +17,4 @@ ls -lah output/
 
 alias sam='sam.cmd'
 
-sam deploy -t aws-sam-template.yaml --no-confirm-changeset --no-fail-on-empty-changeset --stack-name gio-lambda-bucket --s3-bucket aws-lambda-comparison --capabilities CAPABILITY_IAM
+sam deploy -t aws-sam-template.yaml --no-confirm-changeset --no-fail-on-empty-changeset --stack-name rusty-lambda --s3-bucket gio-lambda-bucket --capabilities CAPABILITY_IAM
