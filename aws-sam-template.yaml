@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS Serverless Micronaut API
+
+Resources:
+  RustFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: not.used.in.provided.runtime
+      Runtime: provided
+      CodeUri: output/function.zip
+      MemorySize: 256
+      Tracing: Active
+      Timeout: 10
