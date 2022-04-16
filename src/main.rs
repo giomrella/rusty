@@ -14,6 +14,9 @@ async fn main() -> Result<(), Error> {
 async fn func(event: LambdaEvent<Value>) -> Result<Value, Error> {
         let (event, _context) = event.into_parts();
         println!("event: {}", event);
+        if event["challenge"] != json!(null) {
+            return Ok(json!({ "challenge": event["challenge"] }));
+        }
         response_to_slack_event(&event).await;
         return Ok(json!({ "message": "Success!" }));
 }
@@ -34,7 +37,7 @@ async fn response_to_slack_event(event: &Value) {
     let rusty_user_id = &event["authorizations"][0]["user_id"]
         .as_str()
         .unwrap_or_else(|| "U01UTH2J666");//rusty user id
-    if event["bot_id"] == serde_json::json!(null) {
+    if event["bot_id"] == json!(null) {
         let mut message = String::new();
         if text.starts_with("Hey, Rusty") {
             message = format!("Hey, <@{}>!", user_id);
