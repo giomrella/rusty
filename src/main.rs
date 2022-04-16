@@ -38,12 +38,12 @@ fn get_slack_api_key() -> String {
         }
     }
 }
-async fn response_to_slack_event(event: &HashMap<String, Value>) {
-    let event = &event["event"];
+async fn response_to_slack_event(body: &HashMap<String, Value>) {
+    let body = &event["event"];
     let channel = &event["channel"].as_str().unwrap();
     let text = &event["text"].as_str().unwrap();
     let user_id = &event["user"].as_str().unwrap();
-    let rusty_user_id = &event["authorizations"][0]["user_id"]
+    let rusty_user_id = &body["authorizations"][0]["user_id"]
         .as_str()
         .unwrap_or_else(|| "U01UTH2J666");//rusty user id
     if event["bot_id"] == json!(null) {
