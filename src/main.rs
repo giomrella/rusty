@@ -39,7 +39,7 @@ fn get_slack_api_key() -> String {
     }
 }
 async fn response_to_slack_event(body: &HashMap<String, Value>) {
-    let body = &event["event"];
+    let event = &body["event"];
     let channel = &event["channel"].as_str().unwrap();
     let text = &event["text"].as_str().unwrap();
     let user_id = &event["user"].as_str().unwrap();
