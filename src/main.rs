@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 use lambda_runtime::{service_fn, LambdaEvent, Error};
 use serde_json::{json, Value};
+use serde::Deserialize;
 use std::collections::HashMap;
 
 #[tokio::main]
@@ -10,14 +11,22 @@ async fn main() -> Result<(), Error> {
             lambda_runtime::run(func).await?;
                 Ok(())
 }
+#[derive(Deserialize)]
+struct SlackChallenge {
+    token: String,
+    challenge: String,
+}
 
 async fn func(event: LambdaEvent<Value>) -> Result<Value, Error> {
         let (event, _context) = event.into_parts();
         println!("event: {}", event);
-        if event["challenge"] != json!(null) {
-            return Ok(json!({ "challenge": event["challenge"] }));
+        let body = event["body"].as_str().unwrap();
+        let body: HashMap<String, Value> = serde_json::from_str(body).unwrap();
+        println!("body: {:?}", body);
+        if body["challenge"] != json!(null) {
+            return Ok(json!({ "challenge": body["challenge"] }));
         }
-        response_to_slack_event(&event).await;
+        response_to_slack_event(&body).await;
         return Ok(json!({ "message": "Success!" }));
 }
 fn get_slack_api_key() -> String {
@@ -29,7 +38,7 @@ fn get_slack_api_key() -> String {
         }
     }
 }
-async fn response_to_slack_event(event: &Value) {
+async fn response_to_slack_event(event: &HashMap<String, Value>) {
     let event = &event["event"];
     let channel = &event["channel"].as_str().unwrap();
     let text = &event["text"].as_str().unwrap();
