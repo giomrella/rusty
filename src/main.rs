@@ -58,10 +58,20 @@ async fn response_to_slack_event(body: &HashMap<String, Value>)  -> Result<(), r
         .unwrap_or_else(|| "U01UTH2J666");//rusty user id
     if event["bot_id"] == json!(null) {
         let mut message = String::new();
-        let re = Regex::new(r".*, spin that track ").unwrap();
-        if re.is_match(text) {
-            let track = re.replace_all(text, "").into_owned();
-            message = search_spotify(&track).await?;
+        let regex_track = Regex::new(r".*, spin that track ").unwrap();
+        if regex_track.is_match(text) {
+            let track = regex_track.replace_all(text, "").into_owned();
+            message = search_spotify(&track, SearchType::Track).await?;
+        }
+        let regex_song = Regex::new(r".*, play that song ").unwrap();
+        if regex_song.is_match(text) {
+            let track = regex_song.replace_all(text, "").into_owned();
+            message = search_spotify(&track, SearchType::Track).await?;
+        }
+        let regex_artist = Regex::new(r".*, play something by ").unwrap();
+        if regex_artist.is_match(text) {
+            let artist = regex_artist.replace_all(text, "").into_owned();
+            message = search_spotify(&artist, SearchType::Artist).await?;
         }
         if message != String::new() {
             post_message(channel, message.as_str()).await?
@@ -88,19 +98,24 @@ async fn auth_spotify() -> Result<String, reqwest::Error> {
     //println!("token {}", token); 
     Ok(token.to_string())
 }
-#[derive(Deserialize)] struct SpotifyResponse { tracks: Items }
+#[derive(strum_macros::Display)]
+enum SearchType { Track, Artist }
+
+
+#[derive(Deserialize)] struct TrackResponse { tracks: Items }
+#[derive(Deserialize)] struct ArtistResponse { artists: Items }
 #[derive(Deserialize)] struct Items { items: Vec<ExternalUrls> }
 #[derive(Deserialize)] struct ExternalUrls { external_urls: Spotify }
 #[derive(Deserialize)] struct Spotify { spotify: String }
 
-async fn search_spotify(term: &str) -> Result<String, reqwest::Error> {
+async fn search_spotify(term: &str, search_type: SearchType) -> Result<String, reqwest::Error> {
     let token = auth_spotify().await?;
     let client = reqwest::Client::new();
     let response = client
         .get("https://api.spotify.com/v1/search")
         .query(&[
             ("q",term),
-            ("type","track"),
+            ("type",&search_type.to_string().to_lowercase()),
             ("market","US"),
             ("limit","1")])
         .header("Authorization", format!("Bearer {}", token))
@@ -108,8 +123,16 @@ async fn search_spotify(term: &str) -> Result<String, reqwest::Error> {
         .header("Accept", "application/json")
         .send().await?.text().await?;
     println!("response {}", response); 
-    let spotify_response: SpotifyResponse = serde_json::from_str(&response).unwrap();
-    let url = &spotify_response.tracks.items[0].external_urls.spotify;
+    let url = match search_type {
+        SearchType::Track => {
+            let res: TrackResponse = serde_json::from_str(&response).unwrap();
+            res.tracks.items[0].external_urls.spotify.to_owned()
+        },
+        SearchType::Artist => {
+            let res: ArtistResponse = serde_json::from_str(&response).unwrap();
+            res.artists.items[0].external_urls.spotify.to_owned()
+        }
+    };
     Ok(url.to_string())
 }
 async fn post_message(channel: &str, message: &str) -> Result<(), reqwest::Error> {
