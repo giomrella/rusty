@@ -133,7 +133,7 @@ async fn search_spotify(term: &str, search_type: SearchType) -> Result<String, r
             res.artists.items[0].external_urls.spotify.to_owned()
         }
     };
-    let url = if url == "" { "Never heard of it." } else { url };
+    let url = if url == "" { String::from("Never heard of it.") } else { url };
     Ok(url.to_string())
 }
 async fn post_message(channel: &str, message: &str) -> Result<(), reqwest::Error> {
