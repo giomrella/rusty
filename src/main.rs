@@ -123,18 +123,23 @@ async fn search_spotify(term: &str, search_type: SearchType) -> Result<String, r
         .header("Accept", "application/json")
         .send().await?.text().await?;
     println!("response {}", response); 
-    let url = match search_type {
+    let items = match search_type {
         SearchType::Track => {
             let res: TrackResponse = serde_json::from_str(&response).unwrap();
-            res.tracks.items[0].external_urls.spotify.to_owned()
+            //res.tracks.items[0].external_urls.spotify.to_owned()
+            res.tracks.items
         },
         SearchType::Artist => {
             let res: ArtistResponse = serde_json::from_str(&response).unwrap();
-            res.artists.items[0].external_urls.spotify.to_owned()
+            //res.artists.items[0].external_urls.spotify.to_owned()
+            res.artists.items
         }
     };
-    let url = if url == "" { String::from("Never heard of it.") } else { url };
-    Ok(url.to_string())
+    let response = match items.get(0) {
+        Some(item) => item.external_urls.spotify.to_owned(),
+        None => "Never heard of it.".to_string()
+    };
+    Ok(response)
 }
 async fn post_message(channel: &str, message: &str) -> Result<(), reqwest::Error> {
     let token = get_slack_api_key();
