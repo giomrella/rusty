@@ -68,6 +68,10 @@ async fn respond_to_slack_event(body: &HashMap<String, Value>) -> Result<(), req
             let artist = regex_artist.replace_all(text, "").into_owned();
             message = spotify::search_spotify(&artist, spotify::SearchType::Artist).await?;
         }
+        let regex_tiktok = Regex::new(r"https?://(?:www\.)?tiktok\.com/[^ \n]+").unwrap();
+        if regex_tiktok.is_match(text) {
+            message = fix_tiktok_link(regex_tiktok.find(text).unwrap().as_str()).await?;
+        }
         if message != String::new() {
             post_message(channel, message.as_str(), event["thread_ts"].as_str()).await?
         }
@@ -75,6 +79,22 @@ async fn respond_to_slack_event(body: &HashMap<String, Value>) -> Result<(), req
         println!("Bot message! bot_id: {}\n", event["bot_id"]);
     }
     Ok(())
+}
+
+async fn fix_tiktok_link(url: &str) -> Result<String, reqwest::Error> {
+    let url = "https://www.tiktok.com/t/ZP8LjaWQK/";
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()?;
+    let res = client.get(url).send().await?;
+    let url = if let Some(location) = res.headers().get("location") {
+        location.to_str().unwrap_or_default()
+    } else {
+        url
+    }
+    ;
+    let url = url.split("?").into_iter().next().unwrap_or_default();
+    Ok(url.to_string())
 }
 
 async fn post_message(
@@ -97,4 +117,28 @@ async fn post_message(
         .send()
         .await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[tokio::test]
+    async fn get_tiktok_url() -> Result<(), reqwest::Error> {
+        let url = "https://www.tiktok.com/t/ZP8LjaWQK/";
+        let client = reqwest::blocking::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .build()?;
+        let res = client.get(url).send()?;
+        println!("status: {:?}", res.status());
+        println!("headers: {:?}", res.headers());
+        let url = if let Some(location) = res.headers().get("location") {
+            location.to_str().unwrap_or_default()
+        } else {
+            url
+        }
+        ;
+        println!("Response: {url}");
+        // println!("text: {}", res.text().await?);// this was a mess of text
+        Ok(())
+    }
 }
