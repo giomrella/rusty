@@ -82,7 +82,6 @@ async fn respond_to_slack_event(body: &HashMap<String, Value>) -> Result<(), req
 }
 
 async fn fix_tiktok_link(url: &str) -> Result<String, reqwest::Error> {
-    let url = "https://www.tiktok.com/t/ZP8LjaWQK/";
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
         .build()?;
