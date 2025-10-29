@@ -10,7 +10,7 @@ RUN apt-get install musl-tools -y
 
 RUN apt-get -y install pkg-config libssl-dev
 # Build your program for release
-ENV PKG_CONFIG_ALLOW_CROSS 1
+ENV PKG_CONFIG_ALLOW_CROSS=1
 RUN cargo build --release --target x86_64-unknown-linux-musl
 RUN cp target/x86_64-unknown-linux-musl/release/rusty ./app
 
