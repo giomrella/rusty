@@ -7,7 +7,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: not.used.in.provided.runtime
-      Runtime: provided
+      Runtime: provided.al2023
       CodeUri: output/function.zip
       MemorySize: 256
       Tracing: Active
