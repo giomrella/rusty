@@ -9,6 +9,8 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2
       - uses: actions/setup-python@v2
+        with:
+          python-version: '3.12' # aws sam doesn't support python 3.14+
       - uses: aws-actions/setup-sam@v1
       - uses: aws-actions/configure-aws-credentials@v1
         with:
